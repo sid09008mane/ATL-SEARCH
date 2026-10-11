@@ -1,3 +1,5 @@
+#this is the file where the input will be embedded and 
+# the result is given to qdrant
 import json
 import sys
 from pathlib import Path
