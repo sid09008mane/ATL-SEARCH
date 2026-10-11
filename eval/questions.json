@@ -1,0 +1,86 @@
+[
+  {
+    "id": "q01",
+    "type": "plain",
+    "question": "Someone has been living on my land for many years without my permission. Can they become the owner?",
+    "expected_cases": ["State of Haryana v. Mukesh Kumar & Ors.", "Hemaji Waghaji Jat v. Bhikhabhai Khengarbhai Harijan & Ors.", "Ravinder Kaur Grewal & Ors. v. Manjit Kaur & Ors."],
+    "exact_term": null
+  },
+  {
+    "id": "q02",
+    "type": "plain",
+    "question": "Can a person who became owner by adverse possession file a suit himself to get his title declared?",
+    "expected_cases": ["Ravinder Kaur Grewal & Ors. v. Manjit Kaur & Ors."],
+    "exact_term": null
+  },
+  {
+    "id": "q03",
+    "type": "plain",
+    "question": "The tenant did not pay rent. Can the court order eviction without first fixing the rent that is payable?",
+    "expected_cases": ["Jamnalal & Ors. v. Radheshyam"],
+    "exact_term": null
+  },
+  {
+    "id": "q04",
+    "type": "plain",
+    "question": "Can the High Court look at the evidence again and change findings of fact when hearing a revision under a rent control law?",
+    "expected_cases": ["Hindustan Petroleum Corporation Ltd. v. Dilbahar Singh"],
+    "exact_term": null
+  },
+  {
+    "id": "q05",
+    "type": "plain",
+    "question": "An earlier suit between landlord and tenant was dismissed. Can a new suit based on ownership still be filed, or is it barred?",
+    "expected_cases": ["Koshal Pal & Ors. v. Mohan Lal & Ors."],
+    "exact_term": null
+  },
+  {
+    "id": "q06",
+    "type": "plain",
+    "question": "A protected tenant gave up his tenancy rights orally. Is that surrender valid?",
+    "expected_cases": ["Thota Sridhar Reddy & Ors. v. Mandala Ramulamma & Ors."],
+    "exact_term": null
+  },
+  {
+    "id": "q07",
+    "type": "exact",
+    "question": "Section 12(1)(a)",
+    "expected_cases": ["Jamnalal & Ors. v. Radheshyam"],
+    "exact_term": "Section 12(1)(a)"
+  },
+  {
+    "id": "q08",
+    "type": "exact",
+    "question": "Section 38-E",
+    "expected_cases": ["Thota Sridhar Reddy & Ors. v. Mandala Ramulamma & Ors.", "Edukanti Kistamma (Dead) through LRs. & Ors. v. S. Venkatareddy (Dead) through LRs. & Ors."],
+    "exact_term": "Section 38-E"
+  },
+  {
+    "id": "q09",
+    "type": "exact",
+    "question": "Article 65 of the Limitation Act",
+    "expected_cases": ["Ravinder Kaur Grewal & Ors. v. Manjit Kaur & Ors.", "Uttam Chand (D) through LRs. v. Nathu Ram (D) through LRs. & Ors."],
+    "exact_term": "Article 65"
+  },
+  {
+    "id": "q10",
+    "type": "mixed",
+    "question": "rights of a protected tenant under the Bombay Tenancy and Agricultural Lands Act, 1948",
+    "expected_cases": ["Manekji Edulji Mistry & Ors. v. Maneksha Ardeshir Irani & Anr.", "Sidram Narsappa Kamble v. Sholapur Borough Municipality & Anr.", "Vithal Dattatraya Kulkarni & Ors. v. Shamrao Tukaram Power & Ors."],
+    "exact_term": "Bombay Tenancy"
+  },
+  {
+    "id": "q11",
+    "type": "no_answer",
+    "question": "My cheque bounced. What can I do under Section 138?",
+    "expected_cases": [],
+    "exact_term": "Section 138"
+  },
+  {
+    "id": "q12",
+    "type": "no_answer",
+    "question": "A competitor is using a brand name very similar to my registered trademark. Is that infringement?",
+    "expected_cases": [],
+    "exact_term": "trademark"
+  }
+]

@@ -1,0 +1,6 @@
+sentence-transformers==6.1.0
+numpy>=2.0
+psycopg[binary]==3.3.6
+pgvector==0.5.1
+qdrant-client==1.19.1
+pymupdf>=1.26

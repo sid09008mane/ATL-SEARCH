@@ -1,0 +1,17 @@
+# generated, can always be rebuilt with scripts/embedder.py
+data/vectors/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# local settings and secrets
+.env
+
+# macOS / editors
+.DS_Store
+.vscode/
+.idea/
