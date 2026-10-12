@@ -85,6 +85,10 @@ def main():
         raise SystemExit(f"Vectors have {vectors.shape[1]} numbers each, expected {VECTOR_SIZE}.")
 
     client = connect_qdrant()
+    try:
+        client.get_collections()
+    except Exception as exc:
+        raise SystemExit(f"Cannot connect to Qdrant ({exc.__class__.__name__}). Is Docker running? Try: docker compose up -d")
 
     started = time.perf_counter()
     recreate_collection(client, vector_size=vectors.shape[1])

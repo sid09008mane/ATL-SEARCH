@@ -152,6 +152,7 @@ class SearchResponse:
     search_ms: float
     score_kind: str
     notes: list[str] = field(default_factory=list)
+    missing_terms: list[str] = field(default_factory=list)  # exact terms no paragraph in the collection contains
 
 
 class BackendUnavailable(RuntimeError):
@@ -231,6 +232,9 @@ class PostgresBackend:
             return []
         return self._hits(rows)
 
+    def count_containing(self, term):
+        return self.conn.execute(f"SELECT count(*) FROM {PG_TABLE} WHERE paragraph ~* %s", [term.postgres]).fetchone()[0]
+
     def close(self):
         self.conn.close()
 
@@ -292,6 +296,9 @@ class QdrantBackend:
             QDRANT_COLLECTION, query=query_vector.tolist(), query_filter=flt, limit=k, with_payload=True,
         )
         return [self._hit(p) for p in result.points]
+
+    def count_containing(self, term):
+        return self.client.count(QDRANT_COLLECTION, count_filter=self._filter([term]), exact=True).count
 
     def close(self):
         self.client.close()
@@ -373,16 +380,18 @@ class SearchEngine:
         for hit in hits:
             hit.matched_terms = [t.text for t in terms if t.python.search(hit.paragraph)]
 
-        notes = []
+        notes, missing = [], []
         for term in terms:
-            if not any(term.text in hit.matched_terms for hit in hits):
-                if mode != "semantic" or strict:
-                    notes.append(f'No paragraph in the collection contains "{term.text}".')
-                else:
-                    notes.append(f'None of these results contains "{term.text}". Try --mode keyword or --strict.')
+            if any(term.text in hit.matched_terms for hit in hits):
+                continue
+            if backend.count_containing(term) == 0:
+                missing.append(term.text)
+                notes.append(f'No paragraph in the collection contains "{term.text}".')
+            else:
+                notes.append(f'None of these results contains "{term.text}". Try --mode keyword or --strict.')
         return SearchResponse(query=query, database=database, mode=mode, hits=hits,
                               exact_terms=[t.text for t in terms], embed_ms=embed_ms, search_ms=search_ms,
-                              score_kind=score_kind, notes=notes)
+                              score_kind=score_kind, notes=notes, missing_terms=missing)
 
     def close(self):
         for backend in self.backends.values():

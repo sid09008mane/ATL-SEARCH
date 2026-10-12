@@ -91,7 +91,10 @@ def main():
     if vectors.shape[1] != VECTOR_SIZE:
         raise SystemExit(f"Vectors have {vectors.shape[1]} numbers each, expected {VECTOR_SIZE}.")
 
-    conn = connect_postgres()
+    try:
+        conn = connect_postgres()
+    except Exception as exc:
+        raise SystemExit(f"Cannot connect to Postgres ({exc.__class__.__name__}). Is Docker running? Try: docker compose up -d")
 
     started = time.perf_counter()
     recreate_table(conn)
