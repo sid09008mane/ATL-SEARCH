@@ -26,11 +26,30 @@ def pick_device():
         device = "cpu"
     return device
 
+def _model_is_cached():
+    """True once the model has been downloaded, so it can load without contacting Hugging Face."""
+    import os
+    from pathlib import Path
+
+    hub = os.environ.get("HF_HUB_CACHE") or os.path.join(
+        os.environ.get("HF_HOME", os.path.expanduser("~/.cache/huggingface")), "hub")
+    snapshots = Path(hub, "models--" + MODEL_NAME.replace("/", "--"), "snapshots")
+    for snapshot in snapshots.glob("*"):
+        has_weights = (snapshot / "pytorch_model.bin").exists() or (snapshot / "model.safetensors").exists()
+        if has_weights and (snapshot / "config.json").exists() and (snapshot / "modules.json").exists():
+            return True
+    return False
+
+
 _model = None
 
 def get_model():
     global _model
     if _model is None:
+        import os
+
+        if _model_is_cached():
+            os.environ.setdefault("HF_HUB_OFFLINE", "1")  # skip the online check: faster start, no warning
         from sentence_transformers import SentenceTransformer
 
         device = pick_device()

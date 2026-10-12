@@ -155,12 +155,37 @@ python scripts/answer.py "The tenant did not pay rent. Can the landlord evict hi
 1. If the question names a section that no judgment contains (for example
    `Section 138`), it says so and does not call the model at all.
 2. The model sees only the retrieved paragraphs, numbered `[1]`, `[2]`, ...,
-   and is told to use nothing else and to cite after every point.
-3. If those paragraphs do not answer the question, the model must reply
-   `NO_MATCH`, and the engine prints "no answer is given" instead of guessing.
-4. Every citation in the answer is checked. A citation to a source the model
-   was not given, or an answer with no citations at all, is flagged as unverified.
-5. It explains what courts held; it does not predict outcomes or give advice.
+   and must reply in a fixed JSON format (Groq's strict structured output):
+   a list of short points, each with the source numbers it comes from and the
+   Act it applies.
+3. The code, not the model, attaches the citations. A point with no valid
+   source is removed, and references to sources the model was not given are
+   ignored, so every sentence shown is tied to a judgment. If nothing
+   survives, the answer is withheld.
+4. Each point names its case and the Act (and state). Because rent and tenancy
+   laws differ by state, the answer lists the laws applied and reminds the
+   reader to check the law where the property is.
+5. If the paragraphs do not answer the question, it says so instead of
+   guessing, and it never predicts outcomes or gives advice.
+
+Example output:
+
+```
+ 1. Yes, but only after the landlord follows the procedure in the Act: in Chinnamma v. Gopalan,
+    the landlord had to send a registered notice giving the tenant 15 days to pay the arrears. [1][2]
+    Chinnamma v. Gopalan & Ors. (1995), paras 7, 8 | Kerala Buildings (Lease and Rent Control) Act, 1965
+ 2. ...
+
+Laws applied: Kerala Buildings (Lease and Rent Control) Act, 1965
+Rent and tenancy laws differ from state to state. ...
+```
+
+**Speed.** The first question in a session takes about 20 seconds because the
+BGE-M3 model loads into memory; after that a full answer takes 1 to 2 seconds.
+Use interactive mode (`python scripts/answer.py` with no question) to ask many
+questions with one load. Once the model is downloaded it loads without
+contacting Hugging Face, which is faster and removes the "unauthenticated
+requests" warning.
 
 The model is set in `.env`: `ATL_LLM_MODEL=openai/gpt-oss-120b` gives stronger
 answers, a little slower. Any OpenAI-compatible API works by changing
