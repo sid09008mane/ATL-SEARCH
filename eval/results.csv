@@ -1,1 +1,1 @@
-question_id,question_type,database,search_mode,latency_ms,top1_case,expected_case_in_top5,exact_term_in_top5,notes
+question_id,question_type,database,search_mode,latency_ms,results_returned,top1_case,top1_score,expected_case_in_top5,exact_term_in_top5,notes

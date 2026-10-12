@@ -1,16 +1,12 @@
-#this is the file where the input will be embedded and 
+#this is the file where the input will be embedded and
 # the result is given to qdrant
+# Used by load_postgres.py, load_qdrant.py, search.py and compare.py.
 import json
 import sys
-from pathlib import Path
 
 import numpy as np
-import torch
-from sentence_transformers import SentenceTransformer
 
-CHUNKS_FILE = Path("data/clean/atl_chunks.json")
-VECTORS_FILE = Path("data/vectors/bge_m3.npy")
-MODEL_NAME = "BAAI/bge-m3"
+from config import CHUNKS_FILE, MODEL_NAME, VECTORS_FILE
 
 
 def load_chunks():
@@ -20,6 +16,8 @@ def load_chunks():
 
 
 def pick_device():
+    import torch
+
     if torch.cuda.is_available():
         device = "cuda"
     elif torch.backends.mps.is_available():
@@ -33,8 +31,10 @@ _model = None
 def get_model():
     global _model
     if _model is None:
+        from sentence_transformers import SentenceTransformer
+
         device = pick_device()
-        print(f"Loading model {MODEL_NAME} on {device}...")
+        print(f"Loading model {MODEL_NAME} on {device}...", file=sys.stderr)
         _model = SentenceTransformer(MODEL_NAME, device=device)
     return _model
 
