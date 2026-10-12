@@ -18,11 +18,11 @@ seed grant project. This repo is the "storing and searching" experiment
 |------|------|-------|
 | Clean and cut the judgments | `scripts/build_clean_json.py` | done |
 | Turn paragraphs into vectors | `scripts/embedder.py` | done |
-| Load into Postgres + pgvector | `scripts/load_postgres.py` | to write |
-| Load into Qdrant | `scripts/load_qdrant.py` | to write |
-| Search from either database | `scripts/search.py` | to write |
-| Run all test questions on both | `scripts/compare.py` | to write |
-| Final recommendation | `report/comparison.md` | draft |
+| Load into Postgres + pgvector | `scripts/load_postgres.py` | done |
+| Load into Qdrant | `scripts/load_qdrant.py` | done |
+| Search engine (both databases, three modes) | `scripts/search.py` | done |
+| Run all test questions on both | `scripts/compare.py` | done |
+| Final recommendation | `report/comparison.md` | draft, waiting for real results |
 
 ## Quick start
 
@@ -59,7 +59,7 @@ Both `atl-pg` and `atl-qdrant` should show "Up".
 | Postgres | `postgresql://postgres:atl@localhost:5432/atl` |
 | Qdrant   | `http://localhost:6333` (dashboard at `http://localhost:6333/dashboard`) |
 
-### 4. Create the vectors and run a test search
+### 4. Create the vectors
 
 ```bash
 python scripts/embedder.py "tenant did not pay rent, can the landlord evict him"
@@ -72,7 +72,74 @@ python scripts/embedder.py "tenant did not pay rent, can the landlord evict him"
 - If the download sits at 0% for several minutes, stop it with `Ctrl + C` and
   run it again; it continues where it stopped.
 
-### Everyday commands
+### 5. Load both databases
+
+```bash
+python scripts/load_postgres.py
+python scripts/load_qdrant.py
+```
+
+Both reuse the saved vectors, so the two databases hold identical data. Each
+prints how long loading and indexing took; copy those numbers into `notes.md`.
+Re-running either one rebuilds it from scratch.
+
+### 6. Search
+
+```bash
+python scripts/search.py "tenant did not pay rent, can the landlord evict him"
+```
+
+This searches both databases and shows the five best paragraphs from each, with
+the case name, year, paragraph number, score and a link to the judgment.
+
+| What | Command |
+|------|---------|
+| Interactive (model loads once, ask many questions) | `python scripts/search.py` |
+| One database only | `python scripts/search.py "your question" --db postgres` (or `--db qdrant`) |
+| Choose how to search | `--mode semantic`, `--mode keyword` or `--mode hybrid` (default) |
+| More results | `-k 10` |
+| Only one kind of case | `--category property`, `tenant` or `property_and_tenant` |
+| Every result must contain the section you named | `--strict` |
+| Output for other programs | `--json` |
+
+In interactive mode, change settings with `:db qdrant`, `:mode keyword`, `:k 10`,
+`:category tenant`, `:strict on`, and quit with `:q`.
+
+### 7. Compare the two databases
+
+```bash
+python scripts/compare.py
+```
+
+Runs all 12 questions in `eval/questions.json` on both databases in all three
+modes, writes one row per run to `eval/results.csv`, and prints a summary:
+how often the expected case was in the top 5, how often the exact section was
+found, and the median search time. These numbers go into `report/comparison.md`.
+
+## How the search works
+
+| Mode | Postgres + pgvector | Qdrant |
+|------|---------------------|--------|
+| `semantic` (meaning) | nearest vectors through an HNSW index | nearest vectors through its HNSW index |
+| `keyword` (words) | full-text search, ranked by `ts_rank_cd` | keeps paragraphs containing the words, orders them by meaning (Qdrant has no keyword scoring without extra sparse vectors) |
+| `hybrid` (default) | both lists merged with Reciprocal Rank Fusion | same |
+
+**Exact legal references.** References in a question such as `Section 12(1)(a)`,
+`Section 38-E`, `Article 65`, `Order XXI` or `s. 70(b)`, and anything in double
+quotes, are picked up automatically.
+
+- Keyword search only returns paragraphs that contain them. Postgres matches
+  with a regular expression over a trigram index; Qdrant matches the phrase
+  through its full-text index.
+- Each result says which references it contains.
+- If no paragraph in the collection contains a reference, the search says so
+  (for example, none of the 20 judgments mentions `Section 138`).
+- `--strict` applies the same rule to meaning search too.
+
+Timings shown by `search.py` separate the database search from the time taken
+to embed the question, so the two databases are compared fairly.
+
+## Everyday commands
 
 | What | Command |
 |------|---------|
@@ -80,13 +147,15 @@ python scripts/embedder.py "tenant did not pay rent, can the landlord evict him"
 | Stop them (data is kept) | `docker compose stop` |
 | See their logs | `docker compose logs -f` |
 | Remove them and their data | `docker compose down -v` |
-| Ask a different question | `python scripts/embedder.py "your question"` |
 | Rebuild the vectors | delete `data/vectors/bge_m3.npy`, then run the embedder |
 | Get the latest code | `git pull` |
 | Save and share your work | `git add .` then `git commit -m "what changed"` then `git push` |
 
-Always run commands from the project folder, because paths in the scripts are
-relative to it.
+All settings (file paths, model name, database addresses) live in
+`scripts/config.py`. The scripts work from any folder. To point at a different
+database, set `ATL_PG_DSN` or `ATL_QDRANT_URL`. To run Qdrant without Docker,
+set `ATL_QDRANT_PATH` to a folder and Qdrant runs inside Python instead
+(handy for quick tests, but not for timing comparisons).
 
 ## Folder layout
 
@@ -101,18 +170,27 @@ ATL-SEARCH/
 │   ├── clean/                cleaned text (atl_chunks.json is the file to load)
 │   └── vectors/              embeddings, created by the embedder (not in Git)
 ├── scripts/
+│   ├── config.py             shared settings and database connections
 │   ├── build_clean_json.py   raw -> clean paragraphs
-│   ├── embedder.py           paragraphs -> vectors, plus a test search
-│   ├── embedder_reference.py a longer version with per-paragraph caching
+│   ├── embedder.py           paragraphs -> vectors, question -> vector
+│   ├── embedder_reference.py a longer version with per-paragraph caching (not used by the pipeline)
 │   ├── load_postgres.py      vectors -> Postgres + pgvector
 │   ├── load_qdrant.py        vectors -> Qdrant
-│   ├── search.py             question -> five best paragraphs
+│   ├── search.py             the search engine: question -> best paragraphs
 │   └── compare.py            runs eval/questions.json on both databases
 ├── eval/
 │   ├── questions.json        12 test questions with expected cases
-│   └── results.csv           one row per question per database
+│   └── results.csv           written by compare.py
 └── report/
     └── comparison.md         final recommendation for the team
+```
+
+How the scripts connect:
+
+```
+config.py ──► embedder.py ──► load_postgres.py ──► Postgres + pgvector ─┐
+                    │    └──► load_qdrant.py   ──► Qdrant ──────────────┤
+                    └───────────────────────────────────────────────────┴──► search.py ──► compare.py
 ```
 
 ## The data
@@ -139,14 +217,17 @@ ATL-SEARCH/
 used for paragraphs and questions, and the same vectors must go into both
 databases so the comparison is fair.
 
-## Using the embedder from other scripts
+## Using the search engine from other code
 
 ```python
-from embedder import load_chunks, embed_documents, embed_query
+from search import SearchEngine
 
-chunks = load_chunks()
-vectors = embed_documents([c["paragraph"] for c in chunks])
-q_vector = embed_query("my cheque bounced, what can I do")
+engine = SearchEngine()                      # connects to both databases
+response = engine.search("my cheque bounced, what can I do", database="postgres", mode="hybrid", k=5)
+for hit in response.hits:
+    print(hit.case_name, hit.para_no, hit.score, hit.source_url)
+print(response.notes)                        # e.g. a reference no paragraph contains
+engine.close()
 ```
 
-`vectors[i]` always belongs to `chunks[i]`.
+Run it from the `scripts` folder, or add `scripts` to the Python path.
